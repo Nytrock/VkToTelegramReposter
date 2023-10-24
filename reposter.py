@@ -1,10 +1,15 @@
+
 from time import sleep
 
 import vk_parser
 import telebot
+import json
 
-token = ""
-login = "@nytrock"
+with open("config.json") as file:
+    config = json.load(file)
+
+token = config["TELEGRAM_TOKEN"]
+login = "@" + config["CHANNEL_NAME"]
 last_post = str()
 
 while True:

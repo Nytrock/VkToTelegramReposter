@@ -1,6 +1,10 @@
 import requests
+import json
 
-token = ""
+with open("config.json") as file:
+    config = json.load(file)
+
+token = config["VK_TOKEN"]
 version = 5.154
 domain = "nytrock"
 
@@ -14,4 +18,4 @@ def get_last_post():
                                 'count': 1
                             })
 
-    return response.json()['response']['items'][0]['text']
+    return response.json()['response']['items'][0]
