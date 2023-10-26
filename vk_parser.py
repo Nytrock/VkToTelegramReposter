@@ -39,7 +39,18 @@ def get_by_id(num):
                                 'v': version,
                                 'domain': domain,
                                 'count': 1,
-                                'offset': num
+                                'offset': num - 1
                             })
 
-    return response.json()['response']['items']
+    return response.json()['response']['items'][0]
+
+
+def get_video(owner_id, video_id):
+    response = requests.get("https://api.vk.com/method/video.get",
+                            params={
+                                'access_token': token,
+                                'v': version,
+                                'videos': f"{owner_id}_{video_id}"
+                            })
+
+    return response.json()['response']['items'][0]
