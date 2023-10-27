@@ -1,4 +1,5 @@
 import os
+from io import BytesIO
 from time import sleep
 
 import requests
@@ -25,9 +26,13 @@ app = pyrogram.Client(user_name, app_id, app_hash)
 app.start()
 
 while True:
-    data = vk_parser.get_by_id(7)
+    data = vk_parser.get_by_id(50)
     if data['text'] != last_post:
+        last_post = data['text']
         text = data['text'].replace("@nytrock", "")
+        media = []
+        files = []
+        isAnimation = False
 
         for attachment in data['attachments']:
             if attachment['type'] == 'photo':
@@ -48,20 +53,34 @@ while True:
                     url = sizes['m']
 
                 image = requests.get(url).content
-                app.send_photo(channel, url, text)
+                media.append(pyrogram.types.InputMediaPhoto(BytesIO(image)))
             elif attachment['type'] == 'video':
                 ydl_opts = {"username": vk_login, "password": vk_password}
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     ydl.download([f"https://vk.com/"
                                   f"video{attachment['video']['owner_id']}_{attachment['video']['id']}"])
                 file_name = glob.glob('*.mp4')[0]
-                with open(file_name, 'rb') as video:
-                    message = app.send_message(channel, text)
-                    app.send_video(channel, video, reply_to_message_id=message.id)
-                os.remove(file_name)
+                media.append(pyrogram.types.InputMediaVideo(file_name))
+                files.append(file_name)
             elif attachment['type'] == 'doc':
                 if attachment['doc']['ext'] == 'gif':
-                    app.send_animation(channel, attachment['doc']['url'], caption=text)
+                    app.send_animation(channel, attachment['doc']['url'], text)
+                    isAnimation = True
 
-        last_post = data['text']
+        if isAnimation:
+            continue
+
+        if not media:
+            app.send_message(channel, text)
+        else:
+            if len(text) < 1024:
+                media[0].caption = text
+                app.send_media_group(channel, media)
+            else:
+                message = app.send_message(channel, text)
+                app.send_media_group(channel, media, reply_to_message_id=message.id)
+
+        for file in files:
+            os.remove(file)
+
     sleep(5)
