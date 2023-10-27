@@ -27,12 +27,12 @@ app = pyrogram.Client(user_name, app_id, app_hash)
 app.start()
 
 while True:
-    data = vk_parser.get_by_id(84)
+    data = vk_parser.get_by_id(1)
     if data['text'] != last_post:
         last_post = data['text']
         media = []
         files = []
-        isAnimation = False
+        isOtherMedia = False
 
         text = data['text'].replace("@nytrock", "")
         matches = re.findall(r"[[].+?[|].+?[]]", text)
@@ -41,6 +41,17 @@ while True:
                 link_parts = match[1:-1].split('|')
                 link = f"<a href='https://vk.com/{link_parts[0]}'>{link_parts[1]}</a>"
                 text = text.replace(match, link)
+        texts = [text]
+        if len(text) > 4096:
+            texts = []
+            start = 0
+            end = 4096
+            for i in range(len(text) // 4096 + 2):
+                if i != len(text) // 4096 + 1:
+                    end = text[:end].rfind(" ")
+                texts.append(text[start:min(end, len(text))])
+                start = end + 1
+                end += 4096
 
         for attachment in data['attachments']:
             if attachment['type'] == 'photo':
@@ -72,15 +83,27 @@ while True:
                 files.append(file_name)
             elif attachment['type'] == 'doc':
                 if attachment['doc']['ext'] == 'gif':
-                    app.send_animation(channel, attachment['doc']['url'], text)
-                    isAnimation = True
+                    if len(text) < 1024:
+                        app.send_animation(channel, attachment['doc']['url'], text)
+                    else:
+                        message = app.send_message(channel, texts[0], disable_web_page_preview=False)
+                        if len(texts) > 0:
+                            for txt in texts[1:]:
+                                message = app.send_message(channel, txt, disable_web_page_preview=False,
+                                                           reply_to_message_id=message.id)
+                        app.send_animation(channel, attachment['doc']['url'], reply_to_message_id=message.id)
+                    isOtherMedia = True
             elif attachment['type'] == 'poll':
                 answers = list(map(lambda x: x['text'], attachment['poll']['answers']))
-                message = app.send_message(channel, text)
+                message = app.send_message(channel, texts[0], disable_web_page_preview=False)
+                if len(texts) > 0:
+                    for txt in texts[1:]:
+                        message = app.send_message(channel, txt, disable_web_page_preview=False,
+                                                   reply_to_message_id=message.id)
                 app.send_poll(channel, attachment['poll']['question'], answers, reply_to_message_id=message.id)
-                isAnimation = True
+                isOtherMedia = True
 
-        if isAnimation:
+        if isOtherMedia:
             continue
 
         if not media:
@@ -90,7 +113,11 @@ while True:
                 media[0].caption = text
                 app.send_media_group(channel, media)
             else:
-                message = app.send_message(channel, text)
+                message = app.send_message(channel, texts[0], disable_web_page_preview=False)
+                if len(texts) > 0:
+                    for txt in texts[1:]:
+                        message = app.send_message(channel, txt, disable_web_page_preview=False,
+                                                   reply_to_message_id=message.id)
                 app.send_media_group(channel, media, reply_to_message_id=message.id)
 
         for file in files:
