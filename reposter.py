@@ -27,7 +27,7 @@ app = pyrogram.Client(user_name, app_id, app_hash)
 app.start()
 
 while True:
-    data = vk_parser.get_by_id(85)
+    data = vk_parser.get_by_id(84)
     if data['text'] != last_post:
         last_post = data['text']
         media = []
@@ -74,6 +74,11 @@ while True:
                 if attachment['doc']['ext'] == 'gif':
                     app.send_animation(channel, attachment['doc']['url'], text)
                     isAnimation = True
+            elif attachment['type'] == 'poll':
+                answers = list(map(lambda x: x['text'], attachment['poll']['answers']))
+                message = app.send_message(channel, text)
+                app.send_poll(channel, attachment['poll']['question'], answers, reply_to_message_id=message.id)
+                isAnimation = True
 
         if isAnimation:
             continue
