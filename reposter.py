@@ -11,6 +11,16 @@ import json
 import glob
 import re
 
+
+def send_all_text():
+    mes = app.send_message(channel, texts[0], disable_web_page_preview=False)
+    if len(texts) > 0:
+        for txt in texts[1:]:
+            mes = app.send_message(channel, txt, disable_web_page_preview=False,
+                                   reply_to_message_id=mes.id)
+    return mes
+
+
 with open('config.json') as file:
     config = json.load(file)
 
@@ -27,7 +37,8 @@ app = pyrogram.Client(user_name, app_id, app_hash)
 app.start()
 
 while True:
-    data = vk_parser.get_by_id(1)
+    data = vk_parser.get_by_id(36)
+    data = vk_parser.get_all()
     if data['text'] != last_post:
         last_post = data['text']
         media = []
@@ -86,20 +97,12 @@ while True:
                     if len(text) < 1024:
                         app.send_animation(channel, attachment['doc']['url'], text)
                     else:
-                        message = app.send_message(channel, texts[0], disable_web_page_preview=False)
-                        if len(texts) > 0:
-                            for txt in texts[1:]:
-                                message = app.send_message(channel, txt, disable_web_page_preview=False,
-                                                           reply_to_message_id=message.id)
+                        message = send_all_text()
                         app.send_animation(channel, attachment['doc']['url'], reply_to_message_id=message.id)
                     isOtherMedia = True
             elif attachment['type'] == 'poll':
                 answers = list(map(lambda x: x['text'], attachment['poll']['answers']))
-                message = app.send_message(channel, texts[0], disable_web_page_preview=False)
-                if len(texts) > 0:
-                    for txt in texts[1:]:
-                        message = app.send_message(channel, txt, disable_web_page_preview=False,
-                                                   reply_to_message_id=message.id)
+                message = send_all_text()
                 app.send_poll(channel, attachment['poll']['question'], answers, reply_to_message_id=message.id)
                 isOtherMedia = True
 
@@ -113,11 +116,7 @@ while True:
                 media[0].caption = text
                 app.send_media_group(channel, media)
             else:
-                message = app.send_message(channel, texts[0], disable_web_page_preview=False)
-                if len(texts) > 0:
-                    for txt in texts[1:]:
-                        message = app.send_message(channel, txt, disable_web_page_preview=False,
-                                                   reply_to_message_id=message.id)
+                message = send_all_text()
                 app.send_media_group(channel, media, reply_to_message_id=message.id)
 
         for file in files:
