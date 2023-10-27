@@ -4,7 +4,7 @@ from time import sleep
 import requests
 
 import vk_parser
-import telebot
+import pyrogram
 import yt_dlp
 import json
 import glob
@@ -12,16 +12,20 @@ import glob
 with open('config.json') as file:
     config = json.load(file)
 
-token = config['TELEGRAM_TOKEN']
 channel = '@' + config['CHANNEL_NAME']
 vk_login = config["VK_LOGIN"]
 vk_password = config["VK_PASSWORD"]
 last_post = str()
 
-bot = telebot.TeleBot(token)
+app_id = config['TELEGRAM_APP_API_ID']
+app_hash = config['TELEGRAM_APP_API_HASH']
+user_name = config['USER_NAME']
+
+app = pyrogram.Client(user_name, app_id, app_hash)
+app.start()
 
 while True:
-    data = vk_parser.get_by_id(13)
+    data = vk_parser.get_by_id(7)
     if data['text'] != last_post:
         text = data['text'].replace("@nytrock", "")
 
@@ -44,7 +48,7 @@ while True:
                     url = sizes['m']
 
                 image = requests.get(url).content
-                bot.send_photo(channel, image, text)
+                app.send_photo(channel, url, text)
             elif attachment['type'] == 'video':
                 ydl_opts = {"username": vk_login, "password": vk_password}
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -52,12 +56,12 @@ while True:
                                   f"video{attachment['video']['owner_id']}_{attachment['video']['id']}"])
                 file_name = glob.glob('*.mp4')[0]
                 with open(file_name, 'rb') as video:
-                    message = bot.send_message(channel, text)
-                    bot.send_video(channel, video, reply_to_message_id=message.message_id)
+                    message = app.send_message(channel, text)
+                    app.send_video(channel, video, reply_to_message_id=message.id)
                 os.remove(file_name)
             elif attachment['type'] == 'doc':
                 if attachment['doc']['ext'] == 'gif':
-                    bot.send_animation(channel, attachment['doc']['url'], caption=text)
+                    app.send_animation(channel, attachment['doc']['url'], caption=text)
 
         last_post = data['text']
     sleep(5)
