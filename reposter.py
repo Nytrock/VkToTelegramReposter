@@ -9,6 +9,7 @@ import pyrogram
 import yt_dlp
 import json
 import glob
+import re
 
 with open('config.json') as file:
     config = json.load(file)
@@ -26,13 +27,20 @@ app = pyrogram.Client(user_name, app_id, app_hash)
 app.start()
 
 while True:
-    data = vk_parser.get_by_id(50)
+    data = vk_parser.get_by_id(85)
     if data['text'] != last_post:
         last_post = data['text']
-        text = data['text'].replace("@nytrock", "")
         media = []
         files = []
         isAnimation = False
+
+        text = data['text'].replace("@nytrock", "")
+        matches = re.findall(r"[[].+?[|].+?[]]", text)
+        if matches:
+            for match in matches:
+                link_parts = match[1:-1].split('|')
+                link = f"<a href='https://vk.com/{link_parts[0]}'>{link_parts[1]}</a>"
+                text = text.replace(match, link)
 
         for attachment in data['attachments']:
             if attachment['type'] == 'photo':
