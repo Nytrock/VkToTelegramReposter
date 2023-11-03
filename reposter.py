@@ -8,7 +8,6 @@ import vk_parser
 import pyrogram
 import yt_dlp
 import json
-import glob
 import re
 
 
@@ -37,15 +36,14 @@ app = pyrogram.Client(user_name, app_id, app_hash)
 app.start()
 
 while True:
-    data = vk_parser.get_by_id(36)
-    data = vk_parser.get_all()
+    data = vk_parser.get_by_id(37)
     if data['text'] != last_post:
         last_post = data['text']
         media = []
         files = []
         isOtherMedia = False
 
-        text = data['text'].replace("@nytrock", "")
+        text = data['text'].replace("@nytrock", "").replace("#nytock", "")
         matches = re.findall(r"[[].+?[|].+?[]]", text)
         if matches:
             for match in matches:
@@ -85,11 +83,13 @@ while True:
                 image = requests.get(url).content
                 media.append(pyrogram.types.InputMediaPhoto(BytesIO(image)))
             elif attachment['type'] == 'video':
-                ydl_opts = {"username": vk_login, "password": vk_password}
+                link = f"https://vk.com/video{attachment['video']['owner_id']}_{attachment['video']['id']}"
+                file_name = link.split("/")[-1] + ".mp4"
+                ydl_opts = {"username": vk_login, "password": vk_password, "outtmpl": file_name}
+
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                    ydl.download([f"https://vk.com/"
-                                  f"video{attachment['video']['owner_id']}_{attachment['video']['id']}"])
-                file_name = glob.glob('*.mp4')[0]
+                    ydl.download([link])
+
                 media.append(pyrogram.types.InputMediaVideo(file_name))
                 files.append(file_name)
             elif attachment['type'] == 'doc':
@@ -122,4 +122,4 @@ while True:
         for file in files:
             os.remove(file)
 
-    sleep(5)
+    sleep(1)

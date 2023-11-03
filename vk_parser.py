@@ -21,12 +21,13 @@ def get_last_post():
     return response.json()['response']['items'][0]
 
 
-def get_all():
+def get_all(offset=0):
     response = requests.get("https://api.vk.com/method/wall.get",
                             params={
                                 'access_token': token,
                                 'v': version,
                                 'domain': domain,
+                                'offset': offset
                             })
 
     return response.json()['response']['items']
