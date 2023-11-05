@@ -2,6 +2,7 @@ import os
 from io import BytesIO
 from time import sleep
 
+import urllib.request
 import requests
 
 import vk_parser
@@ -36,14 +37,16 @@ app = pyrogram.Client(user_name, app_id, app_hash)
 app.start()
 
 while True:
-    data = vk_parser.get_by_id(37)
+    data = vk_parser.get_last_post()
     if data['text'] != last_post:
         last_post = data['text']
         media = []
+        documents = []
         files = []
         isOtherMedia = False
+        last_message = None
 
-        text = data['text'].replace("@nytrock", "").replace("#nytock", "")
+        text = re.sub('([#].+?)@nytrock', r'\1', data['text']).replace("#nytrock ", "")
         matches = re.findall(r"[[].+?[|].+?[]]", text)
         if matches:
             for match in matches:
@@ -98,26 +101,42 @@ while True:
                         app.send_animation(channel, attachment['doc']['url'], text)
                     else:
                         message = send_all_text()
-                        app.send_animation(channel, attachment['doc']['url'], reply_to_message_id=message.id)
+                        last_message = app.send_animation(channel, attachment['doc']['url'],
+                                                          reply_to_message_id=message.id)
                     isOtherMedia = True
+                else:
+                    urllib.request.urlretrieve(attachment['doc']['url'], attachment['doc']['title'])
+                    documents.append(pyrogram.types.InputMediaDocument(attachment['doc']['title']))
+                    files.append(attachment['doc']['title'])
+
             elif attachment['type'] == 'poll':
                 answers = list(map(lambda x: x['text'], attachment['poll']['answers']))
                 message = send_all_text()
-                app.send_poll(channel, attachment['poll']['question'], answers, reply_to_message_id=message.id)
+                last_message = app.send_poll(channel, attachment['poll']['question'], answers,
+                                             reply_to_message_id=message.id)
                 isOtherMedia = True
 
         if isOtherMedia:
+            if documents:
+                app.send_media_group(channel, documents, reply_to_message_id=last_message.id)
             continue
 
         if not media:
-            app.send_message(channel, text)
+            if documents:
+                documents[0].caption = text
+                app.send_media_group(channel, documents)
+            else:
+                app.send_message(channel, text)
         else:
             if len(text) < 1024:
                 media[0].caption = text
-                app.send_media_group(channel, media)
+                last_message = app.send_media_group(channel, media)[0]
             else:
                 message = send_all_text()
-                app.send_media_group(channel, media, reply_to_message_id=message.id)
+                last_message = app.send_media_group(channel, media, reply_to_message_id=message.id)[0]
+
+            if documents:
+                app.send_media_group(channel, documents, reply_to_message_id=last_message.id)
 
         for file in files:
             os.remove(file)
