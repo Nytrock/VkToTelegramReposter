@@ -37,7 +37,7 @@ app = pyrogram.Client(user_name, app_id, app_hash)
 app.start()
 
 data = vk_parser.get_last_post()
-last_post = ''
+last_post = data['text']
 
 while True:
     try:
