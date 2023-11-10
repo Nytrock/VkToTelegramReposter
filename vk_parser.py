@@ -16,9 +16,12 @@ def get_last_post():
                                 'v': version,
                                 'domain': domain,
                                 'count': 1
-                            })
+                            }).json()['response']['items'][0]
 
-    return response.json()['response']['items'][0]
+    if 'is_pinned' in response:
+        response = get_by_id(2)
+
+    return response
 
 
 def get_all(offset=0):
