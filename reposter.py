@@ -4,7 +4,6 @@ from time import sleep
 
 import urllib.request
 import requests
-import urllib3
 
 import vk_parser
 import pyrogram
@@ -35,7 +34,6 @@ user_name = config['USER_NAME']
 
 app = pyrogram.Client(user_name, app_id, app_hash)
 app.start()
-
 data = vk_parser.get_last_post()
 last_post = data['text']
 

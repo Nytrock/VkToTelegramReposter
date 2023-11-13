@@ -19,7 +19,9 @@ def get_last_post():
                             }).json()['response']['items'][0]
 
     if 'is_pinned' in response:
-        response = get_by_id(2)
+        next_response = get_by_id(2)
+        if next_response['date'] > response['date']:
+            response = next_response
 
     return response
 
