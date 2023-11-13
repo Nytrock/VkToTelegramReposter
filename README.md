@@ -10,7 +10,7 @@ This bot allows you to automatically forward posts from a selected VKontakte gro
 - Clone the repository
 
 ```shell
-git clone https://github.com/Nytrock/vk_to_telegram_reposter.git
+git clone https://github.com/Nytrock/VkToTelegramReposter.git
 ```
 
 - Install dependencies with requirements.txt
