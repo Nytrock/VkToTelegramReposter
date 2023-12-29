@@ -1,3 +1,5 @@
+<p align="center"><img src="Logo.png" alt="Logo" width="256"></p>
+
 # VK to Telegram reposter
 This bot allows you to automatically forward posts from a selected VKontakte group to a selected Telegram channel. Main advantages of the application:
 - Flexible setup
