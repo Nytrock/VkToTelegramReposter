@@ -24,6 +24,9 @@ def send_all_text():
 with open('config.json') as file:
     config = json.load(file)
 
+default_sleep_time = 5
+error_sleep_time = 30
+
 channel = '@' + config['CHANNEL_NAME']
 vk_login = config["VK_LOGIN"]
 vk_password = config["VK_PASSWORD"]
@@ -35,11 +38,19 @@ user_name = config['USER_NAME']
 app = pyrogram.Client(user_name, app_id, app_hash)
 app.start()
 data = vk_parser.get_last_post()
+while data is None:
+    sleep(default_sleep_time)
+    data = vk_parser.get_last_post()
+
 last_post = data['text']
 
 while True:
     try:
         data = vk_parser.get_last_post()
+        while data is None:
+            sleep(default_sleep_time)
+            data = vk_parser.get_last_post()
+
         if data['text'] != last_post:
             last_post = data['text']
             media = []
@@ -143,6 +154,6 @@ while True:
             for file in files:
                 os.remove(file)
 
-        sleep(5)
+        sleep(default_sleep_time)
     except ConnectionResetError:
-        sleep(30)
+        sleep(error_sleep_time)

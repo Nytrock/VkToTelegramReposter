@@ -1,3 +1,5 @@
+from time import sleep
+
 import requests
 import json
 
@@ -16,10 +18,17 @@ def get_last_post():
                                 'v': version,
                                 'domain': domain,
                                 'count': 1
-                            }).json()['response']['items'][0]
+                            }).json()
+    if 'response' not in response.keys():
+        return None
+    response = response['response']['items'][0]
 
     if 'is_pinned' in response:
         next_response = get_by_id(2)
+        while next_response is None:
+            sleep(5)
+            next_response = get_by_id(2)
+
         if next_response['date'] > response['date']:
             response = next_response
 
@@ -33,9 +42,12 @@ def get_all(offset=0):
                                 'v': version,
                                 'domain': domain,
                                 'offset': offset
-                            })
+                            }).json()
 
-    return response.json()['response']['items']
+    if 'response' not in response.keys():
+        return None
+
+    return response['response']['items']
 
 
 def get_by_id(num):
@@ -46,6 +58,9 @@ def get_by_id(num):
                                 'domain': domain,
                                 'count': 1,
                                 'offset': num - 1
-                            })
+                            }).json()
 
-    return response.json()['response']['items'][0]
+    if 'response' not in response.keys():
+        return None
+
+    return response['response']['items'][0]
