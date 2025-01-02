@@ -31,7 +31,6 @@ app_hash = config['TELEGRAM_APP_API_HASH']
 user_name = config['USER_NAME']
 
 app = pyrogram.Client(user_name, app_id, app_hash)
-app.start()
 
 
 async def send_all_text(texts: list[str]) -> Message:
@@ -45,6 +44,8 @@ async def send_all_text(texts: list[str]) -> Message:
 
 
 async def main():
+    await app.start()
+
     data = vk_parser.get_last_post()
     while data is None:
         await asyncio.sleep(default_sleep_time)
