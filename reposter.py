@@ -145,7 +145,6 @@ def main():
                         app.send_media_group(channel, documents, reply_to_message_id=last_message.id)
                     continue
 
-                print(1)
                 if not media:
                     if documents:
                         documents[0].caption = text
@@ -153,12 +152,9 @@ def main():
                     else:
                         send_all_text(texts)
                 else:
-                    print(2)
                     if len(text) < max_media_text_len:
-                        print(3)
                         media[0].caption = text
                         last_message = app.send_media_group(channel, media)[0]
-                        print(4)
                     else:
                         message = send_all_text(texts)
                         last_message = app.send_media_group(channel, media, reply_to_message_id=message.id)[0]
