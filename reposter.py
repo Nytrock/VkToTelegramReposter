@@ -1,8 +1,9 @@
-import asyncio
 import os
 from io import BytesIO
 
 import urllib.request
+from time import sleep
+
 import requests
 from pyrogram.types import Message
 
@@ -11,6 +12,7 @@ import pyrogram
 import yt_dlp
 import json
 import re
+
 
 
 with open('config.json') as config_file:
@@ -33,22 +35,22 @@ user_name = config['USER_NAME']
 app = pyrogram.Client(user_name, app_id, app_hash)
 
 
-async def send_all_text(texts: list[str]) -> Message:
-    mes = await app.send_message(channel, texts[0], disable_web_page_preview=False)
+def send_all_text(texts: list[str]) -> Message:
+    mes = app.send_message(channel, texts[0], disable_web_page_preview=False)
     if len(texts) > 0:
         for txt in texts[1:]:
-            mes = await app.send_message(channel, txt, disable_web_page_preview=False,
+            mes = app.send_message(channel, txt, disable_web_page_preview=False,
                                    reply_to_message_id=mes.id)
-    await app.send_reaction(channel, mes.id, emoji)
+    app.send_reaction(channel, mes.id, emoji)
     return mes
 
 
-async def main():
-    await app.start()
+def main():
+    app.start()
 
     data = vk_parser.get_last_post()
     while data is None:
-        await asyncio.sleep(default_sleep_time)
+        sleep(default_sleep_time)
         data = vk_parser.get_last_post()
     last_post = data
 
@@ -56,10 +58,10 @@ async def main():
         try:
             data = vk_parser.get_last_post()
             while data is None:
-                await asyncio.sleep(default_sleep_time)
+                sleep(default_sleep_time)
                 data = vk_parser.get_last_post()
 
-            if data['id'] != last_post['id']:
+            if last_post is None or data.get('id') != last_post.get('id'):
                 last_post = data
                 media = []
                 documents = []
@@ -119,10 +121,10 @@ async def main():
                     elif attachment['type'] == 'doc':
                         if attachment['doc']['ext'] == 'gif':
                             if len(text) < max_media_text_len:
-                                last_message = await app.send_animation(channel, attachment['doc']['url'], text)
+                                last_message = app.send_animation(channel, attachment['doc']['url'], text)
                             else:
-                                message = await send_all_text(texts)
-                                last_message = await app.send_animation(channel, attachment['doc']['url'],
+                                message = send_all_text(texts)
+                                last_message = app.send_animation(channel, attachment['doc']['url'],
                                                                   reply_to_message_id=message.id)
                             is_other_media = True
                         else:
@@ -132,40 +134,44 @@ async def main():
 
                     elif attachment['type'] == 'poll':
                         answers = list(map(lambda x: x['text'], attachment['poll']['answers']))
-                        message = await send_all_text(texts)
-                        last_message = await app.send_poll(channel, attachment['poll']['question'], answers,
+                        message = send_all_text(texts)
+                        last_message = app.send_poll(channel, attachment['poll']['question'], answers,
                                                      reply_to_message_id=message.id)
                         is_other_media = True
 
                 if is_other_media:
-                    await app.send_reaction(channel, last_message.id, emoji)
+                    app.send_reaction(channel, last_message.id, emoji)
                     if documents:
-                        await app.send_media_group(channel, documents, reply_to_message_id=last_message.id)
+                        app.send_media_group(channel, documents, reply_to_message_id=last_message.id)
                     continue
 
+                print(1)
                 if not media:
                     if documents:
                         documents[0].caption = text
-                        await app.send_media_group(channel, documents)
+                        app.send_media_group(channel, documents)
                     else:
-                        await send_all_text(texts)
+                        send_all_text(texts)
                 else:
+                    print(2)
                     if len(text) < max_media_text_len:
+                        print(3)
                         media[0].caption = text
-                        last_message = (await app.send_media_group(channel, media))[0]
+                        last_message = app.send_media_group(channel, media)[0]
+                        print(4)
                     else:
-                        message = await send_all_text(texts)
-                        last_message = (await app.send_media_group(channel, media, reply_to_message_id=message.id))[0]
-                    await app.send_reaction(channel, last_message.id, emoji)
+                        message = send_all_text(texts)
+                        last_message = app.send_media_group(channel, media, reply_to_message_id=message.id)[0]
+                    app.send_reaction(channel, last_message.id, emoji)
 
                     if documents:
-                        await app.send_media_group(channel, documents, reply_to_message_id=last_message.id)
+                        app.send_media_group(channel, documents, reply_to_message_id=last_message.id)
 
                 for file in files:
                     os.remove(file)
-            await asyncio.sleep(default_sleep_time)
+            sleep(default_sleep_time)
         except ConnectionResetError:
-            await asyncio.sleep(error_sleep_time)
+            sleep(error_sleep_time)
 
 
-asyncio.run(main())
+main()
